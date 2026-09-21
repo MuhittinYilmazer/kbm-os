@@ -1,10 +1,13 @@
 #include "kernel/shell.h"
 #include "kernel/heap.h"
 #include "kernel/pmm.h"
+#include "kernel/timer.h"
+
 #include <stdint.h>
 
 #include "drivers/console.h"
-#include "kernel/timer.h"
+
+#include "arch/x86_64/reboot.h"
 
 // Keep Unicode codepoints directly so Turkish letters occupy one buffer slot.
 static uint32_t command_buffer[64];
@@ -67,6 +70,9 @@ void shell_handle_character(uint32_t character) {
             console_clear();
             shell_init();
             return;
+        } else if (shell_command_is("REBOOT")) {
+            console_write("REBOOTING...\n");
+            reboot();
         } else if (shell_command_is("MEM")) {
             // Report both PMM frame availability and bump-heap consumption.
 
@@ -120,6 +126,7 @@ void shell_handle_character(uint32_t character) {
             console_write("COMMANDS:\n");
             console_write("HELP\n");
             console_write("CLEAR\n");
+            console_write("REBOOT\n");
             console_write("MEM\n");
             console_write("TICKS\n");
             console_write("UPTIME\n");
