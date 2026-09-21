@@ -1,0 +1,188 @@
+#include "kernel/font.h"
+
+// One byte is one bitmap row. Each bit is one pixel from left to right.
+static const uint8_t font_glyph_a[8] = {0x38, 0x44, 0x82, 0x82, 0xfe, 0x82, 0x82, 0x00};
+static const uint8_t font_glyph_b[8] = {0xfc, 0x82, 0x82, 0xfc, 0x82, 0x82, 0xfc, 0x00};
+static const uint8_t font_glyph_c[8] = {0x7c, 0x82, 0x80, 0x80, 0x80, 0x82, 0x7c, 0x00};
+static const uint8_t font_glyph_d[8] = {0xf8, 0x84, 0x82, 0x82, 0x82, 0x84, 0xf8, 0x00};
+static const uint8_t font_glyph_e[8] = {0xfe, 0x80, 0x80, 0xfc, 0x80, 0x80, 0xfe, 0x00};
+static const uint8_t font_glyph_f[8] = {0xfe, 0x80, 0x80, 0xfc, 0x80, 0x80, 0x80, 0x00};
+static const uint8_t font_glyph_g[8] = {0x7c, 0x82, 0x80, 0x9e, 0x82, 0x82, 0x7c, 0x00};
+static const uint8_t font_glyph_h[8] = {0x82, 0x82, 0x82, 0xfe, 0x82, 0x82, 0x82, 0x00};
+static const uint8_t font_glyph_i[8] = {0x7c, 0x10, 0x10, 0x10, 0x10, 0x10, 0x7c, 0x00};
+static const uint8_t font_glyph_j[8] = {0x3e, 0x08, 0x08, 0x08, 0x88, 0x88, 0x70, 0x00};
+static const uint8_t font_glyph_k[8] = {0x82, 0x84, 0x88, 0xf0, 0x88, 0x84, 0x82, 0x00};
+static const uint8_t font_glyph_l[8] = {0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xfe, 0x00};
+static const uint8_t font_glyph_m[8] = {0x82, 0xc6, 0xaa, 0x92, 0x82, 0x82, 0x82, 0x00};
+static const uint8_t font_glyph_n[8] = {0x82, 0xc2, 0xa2, 0x92, 0x8a, 0x86, 0x82, 0x00};
+static const uint8_t font_glyph_o[8] = {0x7c, 0x82, 0x82, 0x82, 0x82, 0x82, 0x7c, 0x00};
+static const uint8_t font_glyph_p[8] = {0xfc, 0x82, 0x82, 0xfc, 0x80, 0x80, 0x80, 0x00};
+static const uint8_t font_glyph_q[8] = {0x7c, 0x82, 0x82, 0x82, 0x92, 0x8a, 0x7c, 0x02};
+static const uint8_t font_glyph_r[8] = {0xfc, 0x82, 0x82, 0xfc, 0x88, 0x84, 0x82, 0x00};
+static const uint8_t font_glyph_s[8] = {0x7c, 0x82, 0x80, 0x7c, 0x02, 0x82, 0x7c, 0x00};
+static const uint8_t font_glyph_t[8] = {0xfe, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x00};
+static const uint8_t font_glyph_u[8] = {0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x7c, 0x00};
+static const uint8_t font_glyph_v[8] = {0x82, 0x82, 0x82, 0x82, 0x44, 0x28, 0x10, 0x00};
+static const uint8_t font_glyph_w[8] = {0x82, 0x82, 0x82, 0x92, 0xaa, 0xc6, 0x82, 0x00};
+static const uint8_t font_glyph_x[8] = {0x82, 0x44, 0x28, 0x10, 0x28, 0x44, 0x82, 0x00};
+static const uint8_t font_glyph_y[8] = {0x82, 0x44, 0x28, 0x10, 0x10, 0x10, 0x10, 0x00};
+static const uint8_t font_glyph_z[8] = {0xfe, 0x04, 0x08, 0x10, 0x20, 0x40, 0xfe, 0x00};
+
+static const uint8_t font_glyph_zero[8] = {0x7c, 0x82, 0x86, 0x8a, 0x92, 0xa2, 0x7c, 0x00};
+static const uint8_t font_glyph_one[8] = {0x10, 0x30, 0x10, 0x10, 0x10, 0x10, 0x7c, 0x00};
+static const uint8_t font_glyph_two[8] = {0x7c, 0x82, 0x02, 0x0c, 0x30, 0x40, 0xfe, 0x00};
+static const uint8_t font_glyph_three[8] = {0x7c, 0x82, 0x02, 0x3c, 0x02, 0x82, 0x7c, 0x00};
+static const uint8_t font_glyph_four[8] = {0x0c, 0x14, 0x24, 0x44, 0xfe, 0x04, 0x04, 0x00};
+static const uint8_t font_glyph_five[8] = {0xfe, 0x80, 0x80, 0xfc, 0x02, 0x82, 0x7c, 0x00};
+static const uint8_t font_glyph_six[8] = {0x3c, 0x40, 0x80, 0xfc, 0x82, 0x82, 0x7c, 0x00};
+static const uint8_t font_glyph_seven[8] = {0xfe, 0x02, 0x04, 0x08, 0x10, 0x20, 0x20, 0x00};
+static const uint8_t font_glyph_eight[8] = {0x7c, 0x82, 0x82, 0x7c, 0x82, 0x82, 0x7c, 0x00};
+static const uint8_t font_glyph_nine[8] = {0x7c, 0x82, 0x82, 0x7e, 0x02, 0x04, 0x78, 0x00};
+static const uint8_t font_glyph_space[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+// Turkish uppercase glyphs. The lowercase UTF-8 forms use these same
+// temporary uppercase glyphs until KBM gets a separate lowercase font.
+static const uint8_t font_glyph_c_cedilla[8] = {0x7c, 0x82, 0x80, 0x80, 0x80, 0x82, 0x7c, 0x10};
+static const uint8_t font_glyph_g_breve[8] = {0x28, 0x00, 0x7c, 0x82, 0x80, 0x9e, 0x82, 0x7c};
+static const uint8_t font_glyph_i_dotted[8] = {0x10, 0x00, 0x7c, 0x10, 0x10, 0x10, 0x10, 0x7c};
+static const uint8_t font_glyph_o_umlaut[8] = {0x24, 0x00, 0x7c, 0x82, 0x82, 0x82, 0x82, 0x7c};
+static const uint8_t font_glyph_s_cedilla[8] = {0x7c, 0x82, 0x80, 0x7c, 0x02, 0x82, 0x7c, 0x10};
+static const uint8_t font_glyph_u_umlaut[8] = {0x24, 0x00, 0x82, 0x82, 0x82, 0x82, 0x82, 0x7c};
+
+// Basic ASCII punctuation used by the KBM shell UI.
+static const uint8_t font_glyph_period[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18};
+static const uint8_t font_glyph_comma[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x18, 0x20};
+static const uint8_t font_glyph_colon[8] = {0x00, 0x18, 0x18, 0x00, 0x00, 0x18, 0x18, 0x00};
+static const uint8_t font_glyph_semicolon[8] = {0x00, 0x18, 0x18, 0x00, 0x00, 0x18, 0x18, 0x20};
+static const uint8_t font_glyph_minus[8] = {0x00, 0x00, 0x00, 0x7e, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t font_glyph_underscore[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe};
+static const uint8_t font_glyph_slash[8] = {0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x00};
+static const uint8_t font_glyph_question[8] = {0x7c, 0x82, 0x02, 0x0c, 0x10, 0x00, 0x10, 0x00};
+static const uint8_t font_glyph_plus[8] = {0x00, 0x10, 0x10, 0x7c, 0x10, 0x10, 0x00, 0x00};
+static const uint8_t font_glyph_equals[8] = {0x00, 0x7e, 0x00, 0x7e, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t font_glyph_greater[8] = {0x40, 0x20, 0x10, 0x08, 0x10, 0x20, 0x40, 0x00};
+static const uint8_t font_glyph_less[8] = {0x04, 0x08, 0x10, 0x20, 0x10, 0x08, 0x04, 0x00};
+static const uint8_t font_glyph_exclamation[8] = {0x10, 0x10, 0x10, 0x10, 0x10, 0x00, 0x10, 0x00};
+static const uint8_t font_glyph_asterisk[8] = {0x00, 0x10, 0x54, 0x38, 0x54, 0x10, 0x00, 0x00};
+
+const uint8_t *font_get_glyph(uint32_t character) {
+    if (character == 'A')
+        return font_glyph_a;
+    if (character == 'B')
+        return font_glyph_b;
+    if (character == 'C')
+        return font_glyph_c;
+    if (character == 'D')
+        return font_glyph_d;
+    if (character == 'E')
+        return font_glyph_e;
+    if (character == 'F')
+        return font_glyph_f;
+    if (character == 'G')
+        return font_glyph_g;
+    if (character == 'H')
+        return font_glyph_h;
+    if (character == 'I')
+        return font_glyph_i;
+    if (character == 'J')
+        return font_glyph_j;
+    if (character == 'K')
+        return font_glyph_k;
+    if (character == 'L')
+        return font_glyph_l;
+    if (character == 'M')
+        return font_glyph_m;
+    if (character == 'N')
+        return font_glyph_n;
+    if (character == 'O')
+        return font_glyph_o;
+    if (character == 'P')
+        return font_glyph_p;
+    if (character == 'Q')
+        return font_glyph_q;
+    if (character == 'R')
+        return font_glyph_r;
+    if (character == 'S')
+        return font_glyph_s;
+    if (character == 'T')
+        return font_glyph_t;
+    if (character == 'U')
+        return font_glyph_u;
+    if (character == 'V')
+        return font_glyph_v;
+    if (character == 'W')
+        return font_glyph_w;
+    if (character == 'X')
+        return font_glyph_x;
+    if (character == 'Y')
+        return font_glyph_y;
+    if (character == 'Z')
+        return font_glyph_z;
+    if (character == '0')
+        return font_glyph_zero;
+    if (character == '1')
+        return font_glyph_one;
+    if (character == '2')
+        return font_glyph_two;
+    if (character == '3')
+        return font_glyph_three;
+    if (character == '4')
+        return font_glyph_four;
+    if (character == '5')
+        return font_glyph_five;
+    if (character == '6')
+        return font_glyph_six;
+    if (character == '7')
+        return font_glyph_seven;
+    if (character == '8')
+        return font_glyph_eight;
+    if (character == '9')
+        return font_glyph_nine;
+    if (character == ' ')
+        return font_glyph_space;
+    if (character == '.')
+        return font_glyph_period;
+    if (character == ',')
+        return font_glyph_comma;
+    if (character == ':')
+        return font_glyph_colon;
+    if (character == ';')
+        return font_glyph_semicolon;
+    if (character == '-')
+        return font_glyph_minus;
+    if (character == '_')
+        return font_glyph_underscore;
+    if (character == '/')
+        return font_glyph_slash;
+    if (character == '?')
+        return font_glyph_question;
+    if (character == '+')
+        return font_glyph_plus;
+    if (character == '=')
+        return font_glyph_equals;
+    if (character == '>')
+        return font_glyph_greater;
+    if (character == '<')
+        return font_glyph_less;
+    if (character == '!')
+        return font_glyph_exclamation;
+    if (character == '*')
+        return font_glyph_asterisk;
+
+    if (character == 0x00c7 || character == 0x00e7)
+        return font_glyph_c_cedilla;
+    if (character == 0x011e || character == 0x011f)
+        return font_glyph_g_breve;
+    if (character == 0x0130)
+        return font_glyph_i_dotted;
+    if (character == 0x0131)
+        return font_glyph_i;
+    if (character == 0x00d6 || character == 0x00f6)
+        return font_glyph_o_umlaut;
+    if (character == 0x015e || character == 0x015f)
+        return font_glyph_s_cedilla;
+    if (character == 0x00dc || character == 0x00fc)
+        return font_glyph_u_umlaut;
+
+    return 0;
+}
