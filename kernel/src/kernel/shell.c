@@ -100,8 +100,13 @@ void shell_handle_character(uint32_t character) {
 
         } else if (shell_command_is("TICKS")) {
             console_write("TICKS: ");
-            console_write_hex(timer_get_ticks());
+            console_write_decimal(timer_get_ticks());
             console_write("\n");
+        } else if (shell_command_is("UPTIME")) {
+            console_write("UPTIME: ");
+            uint64_t seconds = timer_get_ticks() / 100;
+            console_write_decimal(seconds);
+            console_write(" SECONDS\n");
         } else if (shell_command_starts_with("ECHO")) {
             if (current_buffer_length > 4) {
                 uint64_t index = 5;
@@ -117,6 +122,7 @@ void shell_handle_character(uint32_t character) {
             console_write("CLEAR\n");
             console_write("MEM\n");
             console_write("TICKS\n");
+            console_write("UPTIME\n");
             console_write("ECHO <TEXT>\n");
         } else {
             console_write("UNKNOWN COMMAND\n");
