@@ -41,7 +41,7 @@ Relevant files: `kernel/src/kernel/heap.c` and `heap.h`.
 `kmalloc(size)` rounds requests to 16 bytes. If its current 4 KiB heap frame is
 full, it requests another PMM frame and adds HHDM to form a C pointer. It is a
 bump allocator: it has no `kfree`, and one request larger than 4 KiB panics.
-That is an intentional v0.1 limit.
+This is the current deliberate limit; a free-list heap is the next iteration.
 
 The `heap_get_used_bytes` and `heap_get_frame_count` functions expose heap
 state to boot tests and to `MEM`.
@@ -67,12 +67,21 @@ KBM_HEAP_ACCOUNTING_TEST_OK
 Relevant files: `drivers/framebuffer.*`, `drivers/console.*`, `kernel/font.*`,
 `drivers/keyboard.*`, and `kernel/shell.c`.
 
-The console draws 8×8 bitmap glyphs, wraps lines, and clears instead of
-scrolling. UTF-8 support is limited to ASCII and KBM's two-byte Turkish subset.
+The console draws 8×8 bitmap glyphs, wraps lines, and scrolls upward one glyph
+row when the cursor reaches the bottom. `screen_scroll_up` copies framebuffer
+rows upward and clears the newly exposed bottom row. UTF-8 support is limited
+to ASCII and KBM's two-byte Turkish subset.
 A PS/2 key press raises IRQ1, which reaches IDT vector 33 after PIC remapping.
 The keyboard driver reads port `0x60`, maps a small Turkish-Q subset, sends it
 to the shell, and acknowledges the PIC. v0.1 tracks only Shift state.
 
 The shell stores up to 63 codepoints. Commands are `HELP`, `CLEAR`, `MEM`,
-`TICKS`, `ECHO text`, and a small `ZEYNEP` easter egg. Values are hexadecimal
-for now because that is useful for addresses and bit fields during bring-up.
+`TICKS`, `UPTIME`, `ECHO text`, `REBOOT`, and `KOCAELI`. Decimal console output
+is used for counts and uptime, while hexadecimal remains useful for addresses
+and bit fields during bring-up.
+
+`UPTIME` converts the PIT's approximately 100 ticks per second into whole
+seconds. `REBOOT` calls `arch/x86_64/reboot.c`, which asks the legacy keyboard
+controller through I/O port `0x64` to reset the CPU. Test it with `make run`;
+the serial-debug target intentionally uses QEMU's `-no-reboot` option and exits
+after a guest reboot request.

@@ -39,16 +39,21 @@ Grafik pencere için:
 make run
 ~~~
 
-Erken kernel loglarını terminalde görmek için seri portu standart girdiye ve
-çıktıya bağlayan komut daha kullanışlıdır:
+Erken kernel loglarını terminalde görmek için serial-debug hedefini kullan:
 
 ~~~
-qemu-system-x86_64 -M q35 -cdrom kbm.iso -boot d -m 2G \
-  -display none -serial stdio -monitor none -no-reboot
+make run-serial
 ~~~
 
-Buradaki -m 2G, QEMU içindeki sanal makineye 2 GiB RAM verir. Bu, host
-bilgisayarın fiziksel RAM miktarı değildir.
+`make run`, QEMU'nun legacy `pc` makine modeli üzerinde etkileşimli framebuffer
+oturumu açar. `make run-serial` aynı modeli `-display none`, `-serial stdio`,
+`-monitor none` ve `-no-reboot` ile çalıştırır. Son seçenek crash logunu
+korumak için faydalıdır; fakat guest reboot isteği gönderince QEMU'nun yeniden
+başlaması yerine kapanmasına neden olur. KBM'nin `REBOOT` komutunu denemek için
+normal `make run` kullan.
+
+İki hedef de QEMU içindeki sanal makineye 2 GiB RAM verir. Bu, host bilgisayarın
+fiziksel RAM miktarı değildir.
 
 ## Derleme katmanları
 

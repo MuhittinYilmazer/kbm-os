@@ -22,10 +22,24 @@ all-hdd: $(IMAGE_NAME).hdd
 .PHONY: run
 run: $(IMAGE_NAME).iso
 	qemu-system-x86_64 \
-		-M q35 \
+		-M pc \
 		-cdrom $(IMAGE_NAME).iso \
 		-boot d \
 		$(QEMUFLAGS)
+
+# Serial logs are useful during early boot debugging. -no-reboot keeps a
+# crashing guest from looping, so use normal "make run" to test REBOOT.
+.PHONY: run-serial
+run-serial: $(IMAGE_NAME).iso
+	qemu-system-x86_64 \
+		-M pc \
+		-cdrom $(IMAGE_NAME).iso \
+		-boot d \
+		$(QEMUFLAGS) \
+		-display none \
+		-serial stdio \
+		-monitor none \
+		-no-reboot
 
 .PHONY: run-uefi
 run-uefi: edk2-ovmf-bins $(IMAGE_NAME).iso

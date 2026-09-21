@@ -10,7 +10,7 @@ The following items exist in the source and can be verified in QEMU:
 | --- | --- |
 | Boot | Limine loads the kernel ELF and transfers to `kmain`. |
 | Serial output | It writes boot and error markers through COM1. |
-| Display and console | 8×8 framebuffer text, wrapping, clear, and backspace work. |
+| Display and console | 8×8 framebuffer text, wrapping, scrolling, clear, and backspace work. |
 | Core C routines | `memcpy`, `memset`, `memmove`, and `memcmp` are supplied by the kernel. |
 | CPU setup | A minimal GDT is loaded; code/data selectors are installed. |
 | Exception foundation | The IDT contains selected exception vectors and fatal handlers. |
@@ -20,8 +20,8 @@ The following items exist in the source and can be verified in QEMU:
 | Paging inspection | A 4 KiB page-table walk starting at CR3 and virtual-to-physical translation exist. |
 | Memory discovery | The Limine physical memory map is printed over serial. |
 | PMM | Two-bitmap 4 KiB frame allocation/free and ownership checks work. |
-| Heap | A small 16-byte-aligned PMM-backed bump allocator works. |
-| Keyboard and shell | PS/2 IRQ1, a Turkish-Q subset, and a framebuffer shell work. |
+| Heap | A small 16-byte-aligned PMM-backed bump allocator works; `kfree` is the next heap step. |
+| Keyboard and shell | PS/2 IRQ1, a Turkish-Q subset, scrolling framebuffer shell, uptime display, and reboot command work. |
 
 “Exists” is not the same as “production quality.” Exception support is limited to a few vectors, the timer only counts ticks, and framebuffer code is not yet a terminal or GUI.
 
@@ -54,15 +54,15 @@ Goal: obtain 4 KiB frames from safe usable RAM.
 
 At the end of this stage, code answers “which physical RAM can the kernel use?”
 
-### Milestone B — Kernel heap and dynamic structures (basic version complete)
+### Milestone B — Kernel heap and dynamic structures (bump version complete)
 
 Goal: stop forcing the kernel to live only with static arrays.
 
 1. Obtain frames from the physical allocator.
 2. Map frames into a selected kernel virtual region.
 3. Build the first simple heap.
-4. Write small allocation/free tests.
-5. Make bad boundary conditions visible through serial logging and panic.
+4. Verify alignment, frame growth, and accounting through small tests.
+5. Add a free-list and `kfree` as the next heap iteration.
 
 Keeping the initial heap simple is wise. At this stage the goal is not maximum performance; it is understanding ownership and failure behavior.
 
@@ -70,10 +70,10 @@ Keeping the initial heap simple is wise. At this stage the goal is not maximum p
 
 Goal: give the user meaningful feedback without a serial terminal.
 
-1. Draw text and scrolling on the framebuffer.
-2. Add PS/2 keyboard support or another chosen input path.
-3. Build a small kernel console: writing, backspace, command line.
-4. Add diagnostic commands such as `help`, `memmap`, `ticks`, and `clear`.
+1. Draw text, wrapping, and scrolling on the framebuffer.
+2. Accept PS/2 keyboard input through IRQ1 with a Turkish-Q subset.
+3. Build a small kernel console with writing, backspace, and a command line.
+4. Add diagnostic commands including `HELP`, `MEM`, `TICKS`, `UPTIME`, and `REBOOT`.
 
 Here KBM starts to visibly feel like a “system.” It still does not need to be a user-mode OS.
 
@@ -156,6 +156,7 @@ It neither diminishes the work already done nor pretends absent features exist. 
 
 ## Final checkpoint
 
-The most natural next coding task is a **physical bump allocator**. Before starting it, reread Chapters 8, 9, and 10; especially internalize this sentence:
+The most natural next coding task is a **free-list heap with `kfree`**. Before
+starting it, reread Chapters 8, 9, and 10; especially internalize this sentence:
 
 > Paging establishes whether an address is reachable; an allocator establishes ownership of the RAM behind that address.

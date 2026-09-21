@@ -51,26 +51,27 @@ To start with a graphical window:
 make run
 ~~~
 
-To see serial logging in the terminal, run the current ISO directly under QEMU:
+To see serial logging in the terminal, use the serial-debug target:
 
 ~~~sh
-qemu-system-x86_64 -M q35 -cdrom kbm.iso -boot d -m 2G \
-  -display none -serial stdio -monitor none -no-reboot
+make run-serial
 ~~~
 
 The options mean:
 
 | Option | Effect |
 | --- | --- |
-| `-M q35` | Selects a modern Q35 PC-like platform. |
+| `-M pc` | Selects the legacy PC platform used by KBM's normal BIOS test target. |
 | `-cdrom kbm.iso -boot d` | Attaches the ISO as a CD and boots from it. |
 | `-m 2G` | Gives the guest 2 GiB RAM. |
 | `-display none` | Does not open a graphical window. |
 | `-serial stdio` | Connects COM1 output to the terminal. |
 | `-monitor none` | Does not share the terminal with the QEMU monitor. |
-| `-no-reboot` | Keeps failures from rebooting repeatedly and losing their logs. |
+| `-no-reboot` | Keeps failures from rebooting repeatedly and losing their logs; QEMU exits after a guest reboot request. |
 
-`make run` is convenient for screen/framebuffer experiments. The serial command is more practical for “which marker was last?” questions.
+`make run` is convenient for screen/framebuffer experiments and tests of the
+`REBOOT` command. `make run-serial` is more practical for “which marker was
+last?” questions.
 
 ## 3. The small-experiment rule
 

@@ -39,15 +39,19 @@ For a graphical window:
 make run
 ~~~
 
-For early kernel logs in the terminal, it is more useful to connect the serial
-port to standard input and output:
+For early kernel logs in the terminal, use the serial-debug target:
 
 ~~~
-qemu-system-x86_64 -M q35 -cdrom kbm.iso -boot d -m 2G \
-  -display none -serial stdio -monitor none -no-reboot
+make run-serial
 ~~~
 
-Here -m 2G gives the QEMU virtual machine 2 GiB of RAM. It does not describe
+`make run` starts an interactive framebuffer session on QEMU's legacy `pc`
+machine model. `make run-serial` uses the same model with `-display none`,
+`-serial stdio`, `-monitor none`, and `-no-reboot`. The final option is useful
+for preserving a crash log, but it makes QEMU exit after a guest reboot request.
+Use normal `make run` to test KBM's `REBOOT` command.
+
+Both targets give the QEMU virtual machine 2 GiB of RAM. This does not describe
 the amount of physical RAM in the host computer.
 
 ## Build layers

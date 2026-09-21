@@ -51,26 +51,26 @@ Grafik penceresiyle başlatmak için:
 make run
 ~~~
 
-Seri logu terminalde görmek için mevcut ISO'yu doğrudan QEMU ile çalıştır:
+Seri logu terminalde görmek için serial-debug hedefini kullan:
 
 ~~~sh
-qemu-system-x86_64 -M q35 -cdrom kbm.iso -boot d -m 2G \
-  -display none -serial stdio -monitor none -no-reboot
+make run-serial
 ~~~
 
 Bu komuttaki seçeneklerin amacı:
 
 | Seçenek | Etkisi |
 | --- | --- |
-| `-M q35` | Modern PC benzeri Q35 platformunu seçer. |
+| `-M pc` | KBM'nin normal BIOS test hedefinde kullanılan legacy PC platformunu seçer. |
 | `-cdrom kbm.iso -boot d` | ISO'yu CD olarak takar ve ondan boot eder. |
 | `-m 2G` | Konuk makineye 2 GiB RAM verir. |
 | `-display none` | Grafik pencere açmaz. |
 | `-serial stdio` | COM1 verisini terminale bağlar. |
 | `-monitor none` | Terminali QEMU monitorü ile paylaşmaz. |
-| `-no-reboot` | Hata sonrası sürekli yeniden başlayıp logu kaybettirmez. |
+| `-no-reboot` | Hata sonrası sürekli yeniden başlayıp logu kaybettirmez; guest reboot isteğinden sonra QEMU kapanır. |
 
-`make run` ekran/graphical framebuffer denemeleri için uygundur. Seri komutu ise “son işaretçi neydi?” sorusu için daha pratiktir.
+`make run` ekran/framebuffer denemeleri ve `REBOOT` komutu için uygundur.
+`make run-serial` ise “son işaretçi neydi?” sorusu için daha pratiktir.
 
 ## 3. Değişiklik yaparken küçük deney kuralı
 

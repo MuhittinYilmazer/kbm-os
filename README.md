@@ -29,10 +29,10 @@ planned behavior separately.
 - CR3-based 4 KiB page-table inspection and virtual-to-physical translation
 - Limine memory-map discovery plus a bitmap physical-frame allocator
 - PMM ownership tracking, invalid-free checks, and a small 16-byte-aligned bump heap
-- Framebuffer text console, 8×8 font, limited Turkish UTF-8 support, and PS/2 keyboard IRQ1
-- Interactive `HELP`, `CLEAR`, `MEM`, `TICKS`, and `ECHO` shell commands
+- Framebuffer text console with wrapping, scrolling, an 8×8 font, limited Turkish UTF-8 support, and PS/2 keyboard IRQ1
+- Interactive `HELP`, `CLEAR`, `MEM`, `TICKS`, `UPTIME`, `ECHO`, `REBOOT`, and `KOCAELI` shell commands
 
-KBM intentionally does not yet have `kfree`, scrolling, mouse support, a
+KBM intentionally does not yet have `kfree`, mouse support, a
 filesystem, user mode, processes, a scheduler, networking, or a custom bootloader.
 
 ## Screenshot
@@ -51,11 +51,12 @@ make run
 For a serial-only QEMU session, useful while debugging:
 
 ~~~sh
-qemu-system-x86_64 -M q35 -cdrom kbm.iso -boot d -m 2G \
-  -display none -serial stdio -monitor none -no-reboot
+make run-serial
 ~~~
 
 The expected serial boot path includes markers such as `KBM_BOOT_OK`,
 `KBM_IDT_LOADED`, `KBM_LAPIC_MMIO_MAPPED`, `KBM_PIT_TICKS`, and
 `KBM_MEMMAP_ENTRIES`. See the manuals for the meaning and troubleshooting of
-each marker.
+each marker. `run-serial` deliberately uses QEMU's `-no-reboot`, so a guest
+`REBOOT` request closes QEMU instead of starting the guest again. Use `make run`
+to test the framebuffer shell and the `REBOOT` command.

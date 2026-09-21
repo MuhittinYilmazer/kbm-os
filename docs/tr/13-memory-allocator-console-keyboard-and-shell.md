@@ -43,7 +43,8 @@ frame'lerini tekrar reserved yapar.
 `kmalloc(size)` isteği 16 byte'a yuvarlar. Mevcut 4 KiB heap frame'inde yer
 yoksa PMM'den yeni frame alır ve physical address + HHDM offset ile C pointer'ı
 oluşturur. Bu bir bump allocator'dır: `kfree` yoktur ve 4 KiB'tan büyük tek
-istek panic verir. Bu, v0.1'in bilinçli sınırıdır.
+istek panic verir. Bu mevcut bilinçli sınırdır; sıradaki iterasyon free-list
+heap olacaktır.
 
 `heap_get_used_bytes` ve `heap_get_frame_count`, boot testleriyle `MEM`
 komutunun heap'i gözlemlemesini sağlar.
@@ -69,10 +70,11 @@ KBM_HEAP_ACCOUNTING_TEST_OK
 İlgili dosyalar: `drivers/framebuffer.*`, `drivers/console.*`,
 `kernel/font.*`, `drivers/keyboard.*`, `kernel/shell.c`.
 
-Console, Limine framebuffer'ına 8×8 bitmap glyph çizer; satır taşınca sarar;
-ekran dolunca scroll etmek yerine temizler. Font büyük ASCII, rakamlar,
-noktalama ve gerekli Türkçe karakter alt kümesini içerir. UTF-8 desteği sadece
-KBM'nin kullandığı ASCII ve iki-byte Türkçe diziler içindir.
+Console, Limine framebuffer'ına 8×8 bitmap glyph çizer; satır taşınca sarar ve
+cursor alta ulaşınca bir glyph satırı yukarı scroll eder. `screen_scroll_up`,
+framebuffer satırlarını yukarı kopyalar ve altta açılan satırı temizler. Font
+büyük ASCII, rakamlar, noktalama ve gerekli Türkçe karakter alt kümesini içerir.
+UTF-8 desteği sadece KBM'nin kullandığı ASCII ve iki-byte Türkçe diziler içindir.
 
 PS/2 tuş basımı IRQ1 üretir. PIC remap sonrası IDT vector 33'e gelir.
 `isr_keyboard` C ABI stack hizalamasını kurar. `keyboard_irq`, port `0x60`dan
@@ -80,7 +82,15 @@ Set 1 scan code okur, küçük Türkçe-Q eşlemesiyle shell'e karakter verir ve
 gönderir. v0.1 yalnızca Shift durumunu izler.
 
 Shell en fazla 63 codepoint tutar. Komutlar: `HELP`, `CLEAR`, `MEM`, `TICKS`,
-`ECHO metin` ve `ZEYNEP` easter egg'idir. Sayılar şimdilik hexadecimaldir.
+`UPTIME`, `ECHO metin`, `REBOOT` ve `KOCAELI`dir. Sayı ve uptime çıktısında
+decimal kullanılır; hexadecimal ise bring-up aşamasında adresler ve bit alanları
+için hâlâ yararlıdır.
+
+`UPTIME`, PIT'in saniyede yaklaşık 100 tick üretmesini tam saniyeye çevirir.
+`REBOOT`, `arch/x86_64/reboot.c` içinden legacy keyboard controller'a `0x64`
+I/O portu üzerinden CPU reset isteği yollar. Bu komutu `make run` ile dene;
+serial-debug hedefi bilerek QEMU'nun `-no-reboot` seçeneğini kullanır ve guest
+reboot isteğinden sonra kapanır.
 
 ## Kontrol noktası
 

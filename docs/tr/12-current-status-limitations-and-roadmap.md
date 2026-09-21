@@ -10,7 +10,7 @@ Aşağıdaki maddeler kaynakta var ve QEMU'da doğrulanabilir:
 | --- | --- |
 | Önyükleme | Limine kernel ELF'ini yükler ve `kmain`e geçer. |
 | Seri çıktı | COM1 üzerinden boot ve hata işaretçileri yazar. |
-| Ekran ve console | Framebuffer üzerinde 8×8 fontla metin, satır sarma, clear ve backspace çalışır. |
+| Ekran ve console | Framebuffer üzerinde 8×8 fontla metin, satır sarma, scroll, clear ve backspace çalışır. |
 | Temel C rutinleri | `memcpy`, `memset`, `memmove`, `memcmp` kernel içinde sağlanır. |
 | CPU başlangıcı | Minimal GDT yüklenir; code/data selector'ları ayarlanır. |
 | Exception altyapısı | IDT'de seçili exception vector'leri ve fatal handler'lar vardır. |
@@ -20,8 +20,8 @@ Aşağıdaki maddeler kaynakta var ve QEMU'da doğrulanabilir:
 | Sayfalama inceleme aracı | CR3'ten başlayan 4 KiB page-table yürüyüşü ve sanal→fiziksel çeviri bulunur. |
 | Bellek keşfi | Limine fiziksel memory map'i seri porta yazdırılır. |
 | PMM | İki bitmapli 4 KiB frame allocation/free ve ownership kontrolü çalışır. |
-| Heap | 16-byte hizalı, PMM destekli küçük bump allocator çalışır. |
-| Klavye ve shell | PS/2 IRQ1, Türkçe-Q alt kümesi ve temel framebuffer shell çalışır. |
+| Heap | 16-byte hizalı, PMM destekli küçük bump allocator çalışır; sıradaki heap adımı `kfree`dir. |
+| Klavye ve shell | PS/2 IRQ1, Türkçe-Q alt kümesi, scroll eden framebuffer shell, uptime çıktısı ve reboot komutu çalışır. |
 
 “Var” ile “tam üretim kalitesinde” aynı şey değildir. Örneğin exception desteği birkaç vector ile sınırlı, timer sadece tick sayıyor ve framebuffer kodu henüz bir terminal/GUI değildir.
 
@@ -54,15 +54,15 @@ Amaç: güvenli kullanılabilir RAM'den 4 KiB frame alabilmek.
 
 Bu aşama bittiğinde “kernel hangi fiziksel RAM'i kullanabilir?” sorusuna kodla cevap vermiş olursun.
 
-### Milestone B — Kernel heap ve dinamik veri yapıları (temel sürüm tamamlandı)
+### Milestone B — Kernel heap ve dinamik veri yapıları (bump sürümü tamamlandı)
 
 Amaç: kernelin yalnızca statik dizilerle yaşamak zorunda kalmaması.
 
 1. Fiziksel allocator'dan frame al.
 2. Frame'leri seçilmiş kernel sanal alanına map et.
 3. İlk basit heap'i kur.
-4. Küçük allocation/free testleri yaz.
-5. Hatalı sınır durumlarını seri log ve panic ile görünür kıl.
+4. Hizalama, yeni frame alma ve kullanım sayacını küçük testlerle doğrula.
+5. Bir sonraki heap iterasyonu olarak free-list ve `kfree` ekle.
 
 Heap allocatorı başta basit tutmak akıllıcadır. Amaç erken aşamada maksimum performans değil, sahiplik ve hata davranışını anlamaktır.
 
@@ -70,10 +70,10 @@ Heap allocatorı başta basit tutmak akıllıcadır. Amaç erken aşamada maksim
 
 Amaç: kullanıcıya seri terminal olmadan anlamlı geri bildirim vermek.
 
-1. Framebuffer üzerinde metin çizimi ve kaydırma.
-2. PS/2 klavye veya seçtiğin giriş yolu.
-3. Küçük bir kernel console: yazma, backspace, komut satırı.
-4. `help`, `memmap`, `ticks`, `clear` gibi tanılama komutları.
+1. Framebuffer üzerinde metin çizimi, satır sarma ve scroll.
+2. Türkçe-Q alt kümeli PS/2 klavye girişi.
+3. Yazma, backspace ve komut satırı olan küçük bir kernel console.
+4. `HELP`, `MEM`, `TICKS`, `UPTIME` ve `REBOOT` gibi tanılama komutları.
 
 Bu noktada KBM gözle görülür şekilde “sistem” hissi vermeye başlar. Ama hâlâ user-mode OS olmak zorunda değildir.
 
@@ -156,6 +156,8 @@ Bu tanım hem yapılan işi küçümsemez hem de olmayan özellikleri varmış g
 
 ## Son kontrol noktası
 
-Şu anki en doğal sonraki kod görevi **fiziksel bump allocator**dır. Ona başlamadan önce Bölüm 8, 9 ve 10'u bir kez daha oku; özellikle şu cümleyi oturt:
+Şu anki en doğal sonraki kod görevi **free-list heap ve `kfree`**dir. Ona
+başlamadan önce Bölüm 8, 9 ve 10'u bir kez daha oku; özellikle şu cümleyi
+oturt:
 
 > Sayfalama bir adrese erişebilme kuralıdır; allocator o adres arkasındaki RAM'i kullanma sahipliği kuralıdır.
