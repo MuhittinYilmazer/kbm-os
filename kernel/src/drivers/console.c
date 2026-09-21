@@ -95,6 +95,28 @@ void console_write_hex(uint64_t value) {
     }
 }
 
+void console_write_decimal(uint64_t value) {
+    if (value == 0) {
+        console_write_char('0');
+        return;
+    }
+
+    char digits[20];
+    uint64_t digit_count = 0;
+
+    while (value > 0) {
+        uint64_t last_digit = value % 10;
+        digits[digit_count] = '0' + last_digit;
+        value = value / 10;
+        digit_count++;
+    }
+
+    while (digit_count > 0) {
+        digit_count--;
+        console_write_char(digits[digit_count]);
+    }
+}
+
 void console_backspace(void) {
     // Backspace only erases one character on the current line.
     uint64_t glyph_width = 8 * console_glyph_scale;

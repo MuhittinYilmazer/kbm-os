@@ -72,11 +72,11 @@ void shell_handle_character(uint32_t character) {
 
             console_write("MEMORY:\n");
             console_write("TOTAL_FRAMES: ");
-            console_write_hex(pmm_get_frame_count());
+            console_write_decimal(pmm_get_frame_count());
             console_write("\n");
 
             console_write("FREE_FRAMES: ");
-            console_write_hex(pmm_get_free_frame_count());
+            console_write_decimal(pmm_get_free_frame_count());
             console_write("\n");
 
             console_write("FREE_MEMORY_KIB: ");
