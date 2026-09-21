@@ -14,5 +14,8 @@ void screen_draw_rect(struct limine_framebuffer *framebuffer, uint64_t x_coordin
 void screen_draw_glyph(struct limine_framebuffer *framebuffer, uint64_t x_coordinate,
                        uint64_t y_coordinate, const uint8_t glyph[8], uint64_t scale,
                        uint32_t color);
+void screen_scroll_up(struct limine_framebuffer *framebuffer,
+                      uint64_t pixel_rows,
+                      uint32_t background_color);
 
 #endif

@@ -18,13 +18,23 @@ void console_init(struct limine_framebuffer *framebuffer) {
     screen_fill(console_framebuffer, console_background_color);
 }
 
+// Start a new text line and scroll when there is no room left.
+static void console_new_line(uint64_t glyph_height) {
+    console_cursor_x = 0;
+    console_cursor_y += glyph_height;
+
+    if (console_cursor_y + glyph_height > console_framebuffer->height) {
+        screen_scroll_up(console_framebuffer, glyph_height, console_background_color);
+        console_cursor_y -= glyph_height;
+    }
+}
+
 void console_write_codepoint(uint32_t character) {
     uint64_t glyph_width = 8 * console_glyph_scale;
     uint64_t glyph_height = 8 * console_glyph_scale;
 
     if (character == '\n') {
-        console_cursor_x = 0;
-        console_cursor_y += glyph_height;
+        console_new_line(glyph_height);
         return;
     }
 
@@ -34,15 +44,7 @@ void console_write_codepoint(uint32_t character) {
     }
 
     if (console_cursor_x + glyph_width > console_framebuffer->width) {
-        console_cursor_x = 0;
-        console_cursor_y += glyph_height;
-    }
-
-    // No scrolling yet: clear the screen when we reach the bottom.
-    if (console_cursor_y + glyph_height > console_framebuffer->height) {
-        screen_fill(console_framebuffer, console_background_color);
-        console_cursor_x = 0;
-        console_cursor_y = 0;
+        console_new_line(glyph_height);
     }
 
     screen_draw_glyph(console_framebuffer, console_cursor_x, console_cursor_y, glyph,

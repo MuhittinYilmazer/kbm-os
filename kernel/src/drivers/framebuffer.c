@@ -52,3 +52,28 @@ void screen_draw_glyph(struct limine_framebuffer *framebuffer, uint64_t x_coordi
         }
     }
 }
+
+// Move the framebuffer image up and clear the new rows at the bottom.
+void screen_scroll_up(struct limine_framebuffer *framebuffer,
+                      uint64_t pixel_rows,
+                      uint32_t background_color) {
+    if (pixel_rows >= framebuffer->height) {
+        screen_fill(framebuffer, background_color);
+        return;
+    }
+
+    volatile uint32_t *pixels = (volatile uint32_t *)framebuffer->address;
+    uint64_t pixels_per_row = framebuffer->pitch / sizeof(*pixels);
+
+    for (uint64_t y = 0; y < framebuffer->height - pixel_rows; y++) {
+        for (uint64_t x = 0; x < pixels_per_row; x++) {
+            pixels[y * pixels_per_row + x] = pixels[(y + pixel_rows) * pixels_per_row + x];
+        }
+    }
+
+    for (uint64_t y = framebuffer->height - pixel_rows; y < framebuffer->height; y++) {
+        for (uint64_t x = 0; x < pixels_per_row; x++) {
+            pixels[y * pixels_per_row + x] = background_color;
+        }
+    }
+}
