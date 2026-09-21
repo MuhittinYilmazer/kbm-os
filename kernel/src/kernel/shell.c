@@ -60,8 +60,8 @@ void shell_handle_character(uint32_t character) {
         console_write_char('\n');
         // Leave one visual gap between the entered command and its result.
         console_write_char('\n');
-        if (shell_command_is("ZEYNEP")) {
-            console_write("OKTAY DEGIL JANSET\n");
+        if (shell_command_is("KOCAELI")) {
+            console_write("BELEDİYE MÜZESİ\n");
         } else if (shell_command_is("CLEAR")) {
             // CLEAR should put the next prompt at the top-left.
             console_clear();
