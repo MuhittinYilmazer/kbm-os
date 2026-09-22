@@ -6,7 +6,6 @@
 
 #define MOUSE_CURSOR_SIZE 4
 #define MOUSE_CURSOR_COLOR 0x00FF0000
-#define MOUSE_CURSOR_BACKGROUND 0x00101018
 
 static uint8_t mouse_packet[3];
 static uint8_t mouse_packet_index;
@@ -16,7 +15,8 @@ static int32_t mouse_old_x;
 static int32_t mouse_old_y;
 static uint64_t mouse_screen_width;
 static uint64_t mouse_screen_height;
-struct limine_framebuffer *mouse_framebuffer;
+static struct limine_framebuffer *mouse_framebuffer;
+static uint32_t pixels[16];
 
 static inline uint8_t inb(uint16_t port) {
     uint8_t value;
@@ -59,6 +59,24 @@ static uint8_t mouse_send_command(uint8_t command) {
     return inb(0x60);
 }
 
+static void mouse_save_cursor_background() {
+    for (uint64_t row = 0; row < MOUSE_CURSOR_SIZE; row++) {
+        for (uint64_t column = 0; column < MOUSE_CURSOR_SIZE; column++) {
+            pixels[row * MOUSE_CURSOR_SIZE + column] =
+                screen_get_pixel(mouse_framebuffer, mouse_x + column, mouse_y + row);
+        }
+    }
+}
+
+static void mouse_restore_cursor_background() {
+    for (uint64_t row = 0; row < MOUSE_CURSOR_SIZE; row++) {
+        for (uint64_t column = 0; column < MOUSE_CURSOR_SIZE; column++) {
+            screen_put_pixel(mouse_framebuffer, mouse_old_x + column, mouse_old_y + row,
+                             pixels[row * MOUSE_CURSOR_SIZE + column]);
+        }
+    }
+}
+
 void mouse_init(struct limine_framebuffer *framebuffer) {
 	mouse_framebuffer = framebuffer;
 	mouse_screen_width = framebuffer->width;
@@ -67,6 +85,8 @@ void mouse_init(struct limine_framebuffer *framebuffer) {
 	mouse_y = mouse_screen_height / 2;
 	mouse_old_x = mouse_x;
 	mouse_old_y = mouse_y;
+
+	mouse_save_cursor_background();
 
 	screen_draw_rect(
     mouse_framebuffer,
@@ -137,6 +157,8 @@ void mouse_irq() {
         if ((mouse_packet[0] & 0xC0) == 0) {
             int8_t x_movement = (int8_t)mouse_packet[1];
             int8_t y_movement = (int8_t)mouse_packet[2];
+
+            mouse_restore_cursor_background();
             mouse_x += x_movement;
             mouse_y -= y_movement;
 
@@ -156,23 +178,9 @@ void mouse_irq() {
                 mouse_y = mouse_screen_height - MOUSE_CURSOR_SIZE;
             }
 
-            screen_draw_rect(
-    mouse_framebuffer,
-    mouse_old_x,
-    mouse_old_y,
-    MOUSE_CURSOR_SIZE,
-    MOUSE_CURSOR_SIZE,
-    MOUSE_CURSOR_BACKGROUND
-  );
-
-	screen_draw_rect(
-    mouse_framebuffer,
-    mouse_x,
-    mouse_y,
-    MOUSE_CURSOR_SIZE,
-    MOUSE_CURSOR_SIZE,
-    MOUSE_CURSOR_COLOR
-  );
+            mouse_save_cursor_background();
+            screen_draw_rect(mouse_framebuffer, mouse_x, mouse_y, MOUSE_CURSOR_SIZE,
+                             MOUSE_CURSOR_SIZE, MOUSE_CURSOR_COLOR);
             mouse_old_x = mouse_x;
             mouse_old_y = mouse_y;
         }

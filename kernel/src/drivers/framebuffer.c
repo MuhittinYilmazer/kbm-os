@@ -77,3 +77,17 @@ void screen_scroll_up(struct limine_framebuffer *framebuffer,
         }
     }
 }
+
+uint32_t screen_get_pixel(struct limine_framebuffer *framebuffer, uint64_t x_coordinate,
+                          uint64_t y_coordinate) {
+    if (x_coordinate >= framebuffer->width || y_coordinate >= framebuffer->height) {
+        return 0;
+    }
+
+    // Display hardware observes this memory, so writes must not be optimized away.
+    volatile uint32_t *pixels = (volatile uint32_t *)framebuffer->address;
+    // pitch may include padding, so it is not necessarily width * 4.
+    uint64_t pixels_per_row = framebuffer->pitch / sizeof(*pixels);
+
+    return pixels[y_coordinate * pixels_per_row + x_coordinate];
+}
