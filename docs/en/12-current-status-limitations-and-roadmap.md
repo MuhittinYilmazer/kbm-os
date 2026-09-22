@@ -20,7 +20,7 @@ The following items exist in the source and can be verified in QEMU:
 | Paging inspection | A 4 KiB page-table walk starting at CR3 and virtual-to-physical translation exist. |
 | Memory discovery | The Limine physical memory map is printed over serial. |
 | PMM | Two-bitmap 4 KiB frame allocation/free and ownership checks work. |
-| Heap | A small 16-byte-aligned PMM-backed bump allocator works; `kfree` is the next heap step. |
+| Heap | A small 16-byte-aligned PMM-backed free-list allocator supports `kmalloc`, `kfree`, and adjacent-free-block merging. |
 | Keyboard and shell | PS/2 IRQ1, a Turkish-Q subset, scrolling framebuffer shell, uptime display, and reboot command work. |
 
 “Exists” is not the same as “production quality.” Exception support is limited to a few vectors, the timer only counts ticks, and framebuffer code is not yet a terminal or GUI.
@@ -54,7 +54,7 @@ Goal: obtain 4 KiB frames from safe usable RAM.
 
 At the end of this stage, code answers “which physical RAM can the kernel use?”
 
-### Milestone B — Kernel heap and dynamic structures (bump version complete)
+### Milestone B — Kernel heap and dynamic structures (basic free-list version complete)
 
 Goal: stop forcing the kernel to live only with static arrays.
 
@@ -62,7 +62,7 @@ Goal: stop forcing the kernel to live only with static arrays.
 2. Map frames into a selected kernel virtual region.
 3. Build the first simple heap.
 4. Verify alignment, frame growth, and accounting through small tests.
-5. Add a free-list and `kfree` as the next heap iteration.
+5. Add a free-list, `kfree`, and merging for adjacent free blocks.
 
 Keeping the initial heap simple is wise. At this stage the goal is not maximum performance; it is understanding ownership and failure behavior.
 
@@ -156,7 +156,8 @@ It neither diminishes the work already done nor pretends absent features exist. 
 
 ## Final checkpoint
 
-The most natural next coding task is a **free-list heap with `kfree`**. Before
-starting it, reread Chapters 8, 9, and 10; especially internalize this sentence:
+The most natural next heap task is returning a completely unused heap frame to
+PMM. Before starting it, reread Chapters 8, 9, and 10; especially internalize
+this sentence:
 
 > Paging establishes whether an address is reachable; an allocator establishes ownership of the RAM behind that address.

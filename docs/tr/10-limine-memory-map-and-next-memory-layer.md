@@ -108,7 +108,7 @@ Bu yüzden doğrudan heap ile başlamak teknik olarak mümkündür ama alttaki i
 ## 6. Bu projede henüz ne yok?
 
 KBM artık fiziksel frame dağıtan ve serbest bırakan iki-bitmapli bir PMM ile
-16-byte hizalı küçük bir bump heap'e sahiptir. Güncel uygulama, testler ve
+16-byte hizalı küçük bir free-list heap'e sahiptir. Güncel uygulama, testler ve
 sınırlar Bölüm 13'te anlatılır. HHDM altında RAM'e erişmek yine RAM'i
 “sahiplenmek” değildir; allocator hangi frame'i kimin kullanabileceğini takip eder.
 

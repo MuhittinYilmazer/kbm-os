@@ -28,12 +28,12 @@ planned behavior separately.
 - LAPIC LINT0 setup through an explicitly mapped MMIO page
 - CR3-based 4 KiB page-table inspection and virtual-to-physical translation
 - Limine memory-map discovery plus a bitmap physical-frame allocator
-- PMM ownership tracking, invalid-free checks, and a small 16-byte-aligned bump heap
+- PMM ownership tracking, invalid-free checks, and a small 16-byte-aligned free-list heap with `kmalloc` and `kfree`
 - Framebuffer text console with wrapping, scrolling, an 8×8 font, limited Turkish UTF-8 support, and PS/2 keyboard IRQ1
 - Interactive `HELP`, `CLEAR`, `MEM`, `TICKS`, `UPTIME`, `ECHO`, `REBOOT`, and `KOCAELI` shell commands
 
-KBM intentionally does not yet have `kfree`, mouse support, a
-filesystem, user mode, processes, a scheduler, networking, or a custom bootloader.
+KBM intentionally does not yet have mouse support, a filesystem, user mode,
+processes, a scheduler, networking, or a custom bootloader.
 
 ## Screenshot
 

@@ -40,11 +40,17 @@ frame'lerini tekrar reserved yapar.
 
 İlgili dosyalar: `kernel/src/kernel/heap.c`, `heap.h`.
 
-`kmalloc(size)` isteği 16 byte'a yuvarlar. Mevcut 4 KiB heap frame'inde yer
-yoksa PMM'den yeni frame alır ve physical address + HHDM offset ile C pointer'ı
-oluşturur. Bu bir bump allocator'dır: `kfree` yoktur ve 4 KiB'tan büyük tek
-istek panic verir. Bu mevcut bilinçli sınırdır; sıradaki iterasyon free-list
-heap olacaktır.
+`kmalloc(size)` isteği 16 byte'a yuvarlar, sonra adres sıralı free-list içinde
+uygun blok arar. Her boş blokta payload boyutu, sonraki blok pointer'ı, boşluk
+durumu ve magic değeri bulunan küçük bir başlık vardır. Uygun blok yoksa heap
+PMM'den 4 KiB frame ister ve physical address + HHDM offset ile C pointer'ı
+oluşturur. Başlık çıkarıldıktan sonra tek frame'e sığmayan istek panic verir.
+
+`kfree(pointer)`, çağırana verilmiş payload pointer'ından bir başlık geri gider;
+magic değerini ve double-free durumunu kontrol eder, sonra bloğu free-list'e
+geri koyar. Liste adres sıralı tutulduğu için fiziksel olarak bitişik boş
+bloklar birleştirilebilir. Bu fragmentation'ı azaltır. Tamamen boş kalan heap
+frame'i henüz PMM'ye geri verilmez.
 
 `heap_get_used_bytes` ve `heap_get_frame_count`, boot testleriyle `MEM`
 komutunun heap'i gözlemlemesini sağlar.
@@ -57,12 +63,14 @@ komutunun heap'i gözlemlemesini sağlar.
 - Free edilmiş frame tekrar bulunabilir.
 - Heap ilk frame dolunca PMM'den ikinci frame alır.
 - `kmalloc(13)` 16-byte hizalı pointer verir ve kullanım sayacını 16 artırır.
+- `kfree` kullanılan byte sayısını düşürür; daha sonraki büyük istek, birleşmiş boş alanı yeni PMM frame'i almadan kullanır.
 
 ~~~text
 KBM_PMM_OWNER_TEST_OK
 KBM_PMM_FREE_REUSE_OK: ...
 KBM_HEAP_SECOND_FRAME_TEST_OK: ...
 KBM_HEAP_ACCOUNTING_TEST_OK
+KBM_HEAP_FREE_MERGE_OK
 ~~~
 
 ## Console, klavye ve shell

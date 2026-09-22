@@ -242,7 +242,7 @@ void kmain(void) {
     serial_write("\n");
     serial_write("\n");
 
-    // The first heap is a bump allocator backed by PMM-provided physical frames.
+    // The heap gets physical frames from PMM and can reuse freed blocks.
     heap_init(hhdm_request.response->offset);
     serial_write("KBM_HEAP_READY\n");
 
@@ -280,7 +280,7 @@ void kmain(void) {
 
     // This request cannot fit in the remaining first heap frame, so it needs a new frame.
     uint64_t free_frames_before_second_heap_frame = pmm_get_free_frame_count();
-    uint8_t *second_heap_frame = kmalloc(0xFF0);
+    uint8_t *second_heap_frame = kmalloc(0xFD0);
     uint64_t free_frames_after_second_heap_frame = pmm_get_free_frame_count();
     second_heap_frame[0] = 0xB2;
 
@@ -309,6 +309,40 @@ void kmain(void) {
     }
 
     serial_write("KBM_HEAP_ACCOUNTING_TEST_OK\n");
+    serial_write("\n");
+
+    uint64_t heap_used_before_free = heap_get_used_bytes();
+    uint64_t heap_frames_before_free = heap_get_frame_count();
+    serial_write("KBM_USED_BYTES_BEFORE_FREE: ");
+    serial_write_hex(heap_used_before_free);
+    serial_write("\n");
+
+    kfree(alignment_test);
+
+    serial_write("KBM_USED_BYTES_AFTER_FREE: ");
+    serial_write_hex(heap_get_used_bytes());
+    serial_write("\n");
+
+    if (heap_get_used_bytes() != heap_used_before_free - 16) {
+        panic("KBM_HEAP_FREE_ACCOUNTING_TEST_FAILED");
+    }
+
+    if (heap_get_frame_count() != heap_frames_before_free) {
+        panic("KBM_HEAP_FREE_FRAME_COUNT_TEST_FAILED");
+    }
+
+    // This only fits without a new frame if kfree merged the 16-byte block with its free neighbour.
+    uint8_t *reused_alignment_test = kmalloc(3900);
+
+    if (reused_alignment_test != alignment_test) {
+        panic("KBM_HEAP_MERGE_REUSE_TEST_FAILED");
+    }
+
+    if (heap_get_frame_count() != heap_frames_before_free) {
+        panic("KBM_HEAP_MERGE_FRAME_COUNT_TEST_FAILED");
+    }
+
+    serial_write("KBM_HEAP_FREE_MERGE_OK\n");
     serial_write("\n");
 
     // A software interrupt tests IDT[32] and the returning timer ISR before real IRQs exist.

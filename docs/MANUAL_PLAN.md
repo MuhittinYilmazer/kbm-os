@@ -77,9 +77,10 @@ checkpoint questions.
 ## Scope boundary
 
 The manual documents the current KBM implementation, including its learning
-experiments. KBM currently has a basic frame allocator, bump heap, framebuffer
-console, PS/2 keyboard input, and shell. It must not claim a filesystem, user
-mode, process scheduler, I/O APIC support, SMP, `kfree`, or a custom bootloader.
+experiments. KBM currently has a basic frame allocator, free-list heap,
+framebuffer console, PS/2 keyboard input, and shell. It must not claim a
+filesystem, user mode, process scheduler, I/O APIC support, SMP, or a custom
+bootloader.
 Those topics may appear only as planned work with their prerequisites stated.
 
 ## Completion checks

@@ -8,7 +8,7 @@ reason, parts of the code are deliberately small, direct, and instructional.
 
 This text describes only behavior that exists in the repository. KBM receives
 timer interrupts, accesses LAPIC through MMIO, builds a frame allocator from
-Limine's memory map, uses a bump heap, and runs a framebuffer-console PS/2
+Limine's memory map, uses a small free-list heap, and runs a framebuffer-console PS/2
 keyboard shell. It does not yet have a filesystem, process model, user mode,
 or custom bootloader. Those are future goals and never described as complete.
 

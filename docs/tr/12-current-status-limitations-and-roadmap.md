@@ -20,7 +20,7 @@ Aşağıdaki maddeler kaynakta var ve QEMU'da doğrulanabilir:
 | Sayfalama inceleme aracı | CR3'ten başlayan 4 KiB page-table yürüyüşü ve sanal→fiziksel çeviri bulunur. |
 | Bellek keşfi | Limine fiziksel memory map'i seri porta yazdırılır. |
 | PMM | İki bitmapli 4 KiB frame allocation/free ve ownership kontrolü çalışır. |
-| Heap | 16-byte hizalı, PMM destekli küçük bump allocator çalışır; sıradaki heap adımı `kfree`dir. |
+| Heap | 16-byte hizalı, PMM destekli küçük free-list allocator; `kmalloc`, `kfree` ve bitişik boş blok birleştirme çalışır. |
 | Klavye ve shell | PS/2 IRQ1, Türkçe-Q alt kümesi, scroll eden framebuffer shell, uptime çıktısı ve reboot komutu çalışır. |
 
 “Var” ile “tam üretim kalitesinde” aynı şey değildir. Örneğin exception desteği birkaç vector ile sınırlı, timer sadece tick sayıyor ve framebuffer kodu henüz bir terminal/GUI değildir.
@@ -54,7 +54,7 @@ Amaç: güvenli kullanılabilir RAM'den 4 KiB frame alabilmek.
 
 Bu aşama bittiğinde “kernel hangi fiziksel RAM'i kullanabilir?” sorusuna kodla cevap vermiş olursun.
 
-### Milestone B — Kernel heap ve dinamik veri yapıları (bump sürümü tamamlandı)
+### Milestone B — Kernel heap ve dinamik veri yapıları (temel free-list sürümü tamamlandı)
 
 Amaç: kernelin yalnızca statik dizilerle yaşamak zorunda kalmaması.
 
@@ -62,7 +62,7 @@ Amaç: kernelin yalnızca statik dizilerle yaşamak zorunda kalmaması.
 2. Frame'leri seçilmiş kernel sanal alanına map et.
 3. İlk basit heap'i kur.
 4. Hizalama, yeni frame alma ve kullanım sayacını küçük testlerle doğrula.
-5. Bir sonraki heap iterasyonu olarak free-list ve `kfree` ekle.
+5. Free-list, `kfree` ve bitişik boş blok birleştirme ekle.
 
 Heap allocatorı başta basit tutmak akıllıcadır. Amaç erken aşamada maksimum performans değil, sahiplik ve hata davranışını anlamaktır.
 
@@ -156,8 +156,8 @@ Bu tanım hem yapılan işi küçümsemez hem de olmayan özellikleri varmış g
 
 ## Son kontrol noktası
 
-Şu anki en doğal sonraki kod görevi **free-list heap ve `kfree`**dir. Ona
-başlamadan önce Bölüm 8, 9 ve 10'u bir kez daha oku; özellikle şu cümleyi
-oturt:
+Şu anki en doğal heap görevi tamamen boş kalan bir heap frame'ini PMM'ye geri
+vermektir. Ona başlamadan önce Bölüm 8, 9 ve 10'u bir kez daha oku; özellikle
+şu cümleyi oturt:
 
 > Sayfalama bir adrese erişebilme kuralıdır; allocator o adres arkasındaki RAM'i kullanma sahipliği kuralıdır.

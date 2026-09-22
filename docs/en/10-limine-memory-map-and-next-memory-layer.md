@@ -106,7 +106,7 @@ Starting directly with a heap is technically possible, but then you must secretl
 ## 6. What this project does not have yet
 
 KBM now has a two-bitmap PMM that distributes and frees physical frames plus a
-small 16-byte-aligned bump heap. Chapter 13 describes its implementation,
+small 16-byte-aligned free-list heap. Chapter 13 describes its implementation,
 tests, and limits. HHDM access still does not mean the kernel has **claimed**
 RAM; an allocator tracks which frame may safely be used by whom.
 

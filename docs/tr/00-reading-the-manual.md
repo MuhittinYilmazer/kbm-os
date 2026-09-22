@@ -9,7 +9,7 @@ kernelidir. Bu yüzden kodun bazı bölümleri küçük, kasıtlı olarak doğru
 
 Metin yalnızca depodaki mevcut davranışı anlatır. KBM timer interrupt alır,
 LAPIC'e MMIO üzerinden erişir, Limine memory map'iyle frame allocator kurar,
-bump heap kullanır ve framebuffer console + PS/2 klavye shell'i çalıştırır.
+küçük bir free-list heap kullanır ve framebuffer console + PS/2 klavye shell'i çalıştırır.
 Filesystem, process, kullanıcı modu ve kendi bootloader'ı henüz yoktur. Bunlar
 gelecek hedef olarak belirtilir; yapılmış özellik gibi anlatılmaz.
 

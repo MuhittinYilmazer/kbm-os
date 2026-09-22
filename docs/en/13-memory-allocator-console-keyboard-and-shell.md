@@ -38,10 +38,17 @@ only complete usable frames, and reserves bitmap metadata.
 
 Relevant files: `kernel/src/kernel/heap.c` and `heap.h`.
 
-`kmalloc(size)` rounds requests to 16 bytes. If its current 4 KiB heap frame is
-full, it requests another PMM frame and adds HHDM to form a C pointer. It is a
-bump allocator: it has no `kfree`, and one request larger than 4 KiB panics.
-This is the current deliberate limit; a free-list heap is the next iteration.
+`kmalloc(size)` rounds requests to 16 bytes, then searches an address-ordered
+free-list. A free block has a small header containing its payload size, next
+pointer, free flag, and a magic value. If no block fits, the heap requests one
+4 KiB PMM frame and adds HHDM to form a C pointer. A request larger than one
+frame minus its header panics.
+
+`kfree(pointer)` walks one header backward from the returned payload pointer,
+checks the magic value and double-free state, then puts the block back into the
+free-list. The list stays ordered by address, so physically adjacent free
+blocks can be merged. This reduces fragmentation. A completely unused heap
+frame is not returned to PMM yet.
 
 The `heap_get_used_bytes` and `heap_get_frame_count` functions expose heap
 state to boot tests and to `MEM`.
@@ -54,12 +61,14 @@ state to boot tests and to `MEM`.
 - A freed frame can be allocated again.
 - The heap gets a second PMM frame when its first frame fills.
 - `kmalloc(13)` returns a 16-byte-aligned pointer and adds 16 used bytes.
+- `kfree` lowers the used-byte count and a later large allocation reuses merged free space without a new PMM frame.
 
 ~~~text
 KBM_PMM_OWNER_TEST_OK
 KBM_PMM_FREE_REUSE_OK: ...
 KBM_HEAP_SECOND_FRAME_TEST_OK: ...
 KBM_HEAP_ACCOUNTING_TEST_OK
+KBM_HEAP_FREE_MERGE_OK
 ~~~
 
 ## Console, keyboard, and shell
