@@ -6,10 +6,12 @@
 .global isr_page_fault
 .global isr_timer
 .global isr_keyboard
+.global isr_mouse
 
 .extern exception_fatal
 .extern timer_irq
 .extern keyboard_irq
+.extern mouse_irq
 
 isr_divide_error:
     # Pass the CPU-assigned exception vector as the first C argument.
@@ -82,6 +84,37 @@ isr_keyboard:
     and rsp, -16
 
     call keyboard_irq
+
+    mov rsp, rbx
+    pop rbx
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rax
+    iretq
+
+isr_mouse:
+
+    push rax
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push r8
+    push r9
+    push r10
+    push r11
+    push rbx
+    cld
+    mov rbx, rsp
+    and rsp, -16
+
+    call mouse_irq
 
     mov rsp, rbx
     pop rbx

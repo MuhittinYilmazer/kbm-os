@@ -63,5 +63,15 @@ void pic_enable_irq(uint8_t irq) {
         uint8_t irq_bit = (uint8_t)(1 << irq);
         current_mask &= (uint8_t)~irq_bit;
         outb(0x21, current_mask);
+    } else if (irq >= 8 && irq < 16) {
+        uint8_t current_mask = inb(0xA1);
+        uint8_t irq_bit = (uint8_t)(1 << (irq - 8));
+        current_mask &= (uint8_t)~irq_bit;
+        outb(0xA1, current_mask);
+
+        // The slave PIC reaches the CPU through the master's IRQ2 cascade line.
+        current_mask = inb(0x21);
+        current_mask &= (uint8_t)~(1 << 2);
+        outb(0x21, current_mask);
     }
 }

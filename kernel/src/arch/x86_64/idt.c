@@ -24,6 +24,7 @@ extern void isr_general_protection_fault();
 extern void isr_page_fault();
 extern void isr_timer();
 extern void isr_keyboard();
+extern void isr_mouse();
 // Implemented in idt_load.S because lidt is a CPU-specific instruction.
 extern void idt_load();
 
@@ -59,6 +60,7 @@ void idt_init() {
     // PIC remapping makes legacy timer IRQ0 arrive through CPU vector 32.
     idt_set_gate(idt, 32, isr_timer);
     idt_set_gate(idt, 33, isr_keyboard);
+    idt_set_gate(idt, 44, isr_mouse);
 
     // Load only after every currently supported exception gate is initialized.
     idt_load(&idt_pointer);

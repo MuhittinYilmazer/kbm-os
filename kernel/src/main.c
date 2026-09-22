@@ -12,6 +12,7 @@
 #include "drivers/console.h"
 #include "drivers/framebuffer.h"
 #include "drivers/keyboard.h"
+#include "drivers/mouse.h"
 #include "drivers/pit.h"
 #include "drivers/serial.h"
 #include "kernel/font.h"
@@ -362,6 +363,9 @@ void kmain(void) {
     keyboard_init();
     serial_write("KBM_KEYBOARD_READY\n");
     serial_write("\n");
+
+    mouse_init(framebuffer);
+
     asm volatile("sti");
 
     while (true) {
