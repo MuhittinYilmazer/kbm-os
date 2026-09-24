@@ -8,6 +8,7 @@
 #include "arch/x86_64/idt.h"
 #include "arch/x86_64/lapic.h"
 #include "arch/x86_64/paging.h"
+#include "arch/x86_64/pci.h"
 #include "arch/x86_64/pic.h"
 #include "drivers/console.h"
 #include "drivers/framebuffer.h"
@@ -67,6 +68,35 @@ static struct limine_framebuffer *boot_get_framebuffer(void) {
     return framebuffer_request.response->framebuffers[0];
 }
 
+static void pci_debug_scan_bus(uint8_t bus) {
+    // Each PCI bus has 32 device numbers and each device can have up to 8 functions.
+    for (uint8_t device = 0; device < 32; device++) {
+        for (uint8_t function = 0; function < 8; function++) {
+            uint32_t identity = pci_config_read_dword(bus, device, function, 0);
+            uint16_t vendor_id = (uint16_t)(identity & 0xFFFF);
+            uint16_t device_id = (uint16_t)(identity >> 16);
+
+            // A missing PCI function reads back with vendor ID 0xFFFF.
+            if (vendor_id == 0xFFFF) {
+                continue;
+            }
+
+            // The first config value contains both vendor ID and device ID.
+            serial_write("KBM_PCI_DEVICE BDF=");
+            serial_write_hex(bus);
+            serial_write(":");
+            serial_write_hex(device);
+            serial_write(":");
+            serial_write_hex(function);
+            serial_write(" VENDOR=");
+            serial_write_hex(vendor_id);
+            serial_write(" DEVICE=");
+            serial_write_hex(device_id);
+            serial_write("\n");
+        }
+    }
+}
+
 void kmain(void) {
     // Start serial output first so every later boot failure is visible.
     serial_init();
@@ -100,6 +130,9 @@ void kmain(void) {
     serial_write("KBM_GDT_LOADER_CALLED\n");
     idt_init();
     serial_write("KBM_IDT_LOADED\n");
+    serial_write("KBM_PCI_SCAN_BEGIN\n");
+    pci_debug_scan_bus(0);
+    serial_write("KBM_PCI_SCAN_DONE\n");
     serial_write("\n");
 
     // Translate one known kernel virtual address as a paging self-check.

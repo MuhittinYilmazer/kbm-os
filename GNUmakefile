@@ -2,7 +2,7 @@
 .SUFFIXES:
 
 # Default user QEMU flags. These are appended to the QEMU command calls.
-QEMUFLAGS := -m 2G -k tr
+QEMUFLAGS := -m 2G -k tr -nic user,model=e1000
 
 override IMAGE_NAME := kbm
 
