@@ -93,6 +93,35 @@ static void pci_debug_scan_bus(uint8_t bus) {
             serial_write(" DEVICE=");
             serial_write_hex(device_id);
             serial_write("\n");
+
+            if (vendor_id == 0x8086 && device_id == 0x100E) {
+                uint32_t bar0 = pci_config_read_dword(bus, device, function, 0x10);
+
+                serial_write("KBM_E1000_BAR0_RAW=");
+                serial_write_hex(bar0);
+                serial_write("\n");
+
+                if ((bar0 & 1) == 0) {
+                    // Memory BARs use the low four bits for flags, not the address.
+                    uint64_t bar0_base = (uint64_t)(bar0 & 0xFFFFFFF0);
+                    uint32_t bar_type = (bar0 >> 1) & 0x3;
+
+                    // A 64-bit BAR stores its upper address bits in the next BAR.
+                    if (bar_type == 0x2) {
+                        uint32_t bar1 = pci_config_read_dword(bus, device, function, 0x14);
+                        bar0_base |= (uint64_t)bar1 << 32;
+                    }
+
+                    serial_write("KBM_E1000_MMIO_BASE=");
+                    serial_write_hex(bar0_base);
+                    serial_write("\n");
+                } else {
+                    // An I/O BAR uses only its lowest two bits as flags.
+                    serial_write("KBM_E1000_IO_BASE=");
+                    serial_write_hex(bar0 & 0xFFFFFFFC);
+                    serial_write("\n");
+                }
+            }
         }
     }
 }
