@@ -17,6 +17,7 @@ static uint64_t mouse_screen_width;
 static uint64_t mouse_screen_height;
 static struct limine_framebuffer *mouse_framebuffer;
 static uint32_t pixels[16];
+static int mouse_cursor_visible;
 
 static inline uint8_t inb(uint16_t port) {
     uint8_t value;
@@ -77,6 +78,30 @@ static void mouse_restore_cursor_background() {
     }
 }
 
+// Hide the software cursor before another subsystem redraws part of the screen.
+void mouse_hide_cursor() {
+    if (mouse_cursor_visible == 0) {
+        return;
+    }
+
+    mouse_restore_cursor_background();
+    mouse_cursor_visible = 0;
+}
+
+// Save the current pixels again before drawing the software cursor back on top.
+void mouse_show_cursor() {
+    if (mouse_cursor_visible != 0) {
+        return;
+    }
+
+    mouse_old_x = mouse_x;
+    mouse_old_y = mouse_y;
+    mouse_save_cursor_background();
+    screen_draw_rect(mouse_framebuffer, mouse_x, mouse_y, MOUSE_CURSOR_SIZE, MOUSE_CURSOR_SIZE,
+                     MOUSE_CURSOR_COLOR);
+    mouse_cursor_visible = 1;
+}
+
 void mouse_init(struct limine_framebuffer *framebuffer) {
 	mouse_framebuffer = framebuffer;
 	mouse_screen_width = framebuffer->width;
@@ -86,16 +111,7 @@ void mouse_init(struct limine_framebuffer *framebuffer) {
 	mouse_old_x = mouse_x;
 	mouse_old_y = mouse_y;
 
-	mouse_save_cursor_background();
-
-	screen_draw_rect(
-    mouse_framebuffer,
-    mouse_x,
-    mouse_y,
-    MOUSE_CURSOR_SIZE,
-    MOUSE_CURSOR_SIZE,
-    MOUSE_CURSOR_COLOR
-  );
+    mouse_show_cursor();
 
 
     // Enable the controller's auxiliary PS/2 port.
@@ -158,7 +174,7 @@ void mouse_irq() {
             int8_t x_movement = (int8_t)mouse_packet[1];
             int8_t y_movement = (int8_t)mouse_packet[2];
 
-            mouse_restore_cursor_background();
+            mouse_hide_cursor();
             mouse_x += x_movement;
             mouse_y -= y_movement;
 
@@ -178,11 +194,7 @@ void mouse_irq() {
                 mouse_y = mouse_screen_height - MOUSE_CURSOR_SIZE;
             }
 
-            mouse_save_cursor_background();
-            screen_draw_rect(mouse_framebuffer, mouse_x, mouse_y, MOUSE_CURSOR_SIZE,
-                             MOUSE_CURSOR_SIZE, MOUSE_CURSOR_COLOR);
-            mouse_old_x = mouse_x;
-            mouse_old_y = mouse_y;
+            mouse_show_cursor();
         }
         serial_write("KBM_MOUSE_PACKET: ");
         serial_write_hex(mouse_packet[0]);

@@ -78,6 +78,38 @@ void screen_scroll_up(struct limine_framebuffer *framebuffer,
     }
 }
 
+// Scroll only the framebuffer area below top_y and leave a UI header untouched.
+void screen_scroll_region_up(struct limine_framebuffer *framebuffer,
+                             uint64_t top_y,
+                             uint64_t pixel_rows,
+                             uint32_t background_color) {
+    if (top_y >= framebuffer->height) {
+        return;
+    }
+
+    uint64_t region_height = framebuffer->height - top_y;
+    if (pixel_rows >= region_height) {
+        screen_draw_rect(framebuffer, 0, top_y, framebuffer->width, region_height,
+                         background_color);
+        return;
+    }
+
+    volatile uint32_t *pixels = (volatile uint32_t *)framebuffer->address;
+    uint64_t pixels_per_row = framebuffer->pitch / sizeof(*pixels);
+
+    for (uint64_t y = top_y; y < framebuffer->height - pixel_rows; y++) {
+        for (uint64_t x = 0; x < pixels_per_row; x++) {
+            pixels[y * pixels_per_row + x] = pixels[(y + pixel_rows) * pixels_per_row + x];
+        }
+    }
+
+    for (uint64_t y = framebuffer->height - pixel_rows; y < framebuffer->height; y++) {
+        for (uint64_t x = 0; x < pixels_per_row; x++) {
+            pixels[y * pixels_per_row + x] = background_color;
+        }
+    }
+}
+
 uint32_t screen_get_pixel(struct limine_framebuffer *framebuffer, uint64_t x_coordinate,
                           uint64_t y_coordinate) {
     if (x_coordinate >= framebuffer->width || y_coordinate >= framebuffer->height) {

@@ -366,9 +366,22 @@ void kmain(void) {
 
     mouse_init(framebuffer);
 
+    uint64_t displayed_uptime_seconds = 0;
     asm volatile("sti");
 
     while (true) {
+        uint64_t uptime_seconds = timer_get_ticks() / 100;
+
+        if (uptime_seconds != displayed_uptime_seconds) {
+            // Do not let a mouse IRQ redraw stale saved pixels over the new header.
+            asm volatile("cli");
+            mouse_hide_cursor();
+            console_update_header(uptime_seconds);
+            mouse_show_cursor();
+            displayed_uptime_seconds = uptime_seconds;
+            asm volatile("sti");
+        }
+
         asm volatile("hlt");
     }
 }

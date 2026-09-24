@@ -13,10 +13,15 @@
 static uint32_t command_buffer[64];
 static uint64_t current_buffer_length;
 
+#define SHELL_COLOR_TEXT 0x00FFFFFF
+
 void shell_init() {
     // Start a new, empty command line.
     current_buffer_length = 0;
-    console_write("KBM> ");
+
+    // Keep the prompt short so command lines stay uncluttered.
+    console_set_text_color(SHELL_COLOR_TEXT);
+    console_write("kbm> ");
 }
 
 static int shell_command_is(const char *command) {
@@ -66,7 +71,7 @@ void shell_handle_character(uint32_t character) {
         if (shell_command_is("KOCAELI")) {
             console_write("BELEDİYE MÜZESİ\n");
         } else if (shell_command_is("CLEAR")) {
-            // CLEAR should put the next prompt at the top-left.
+            // CLEAR returns to an empty console with a new prompt.
             console_clear();
             shell_init();
             return;
