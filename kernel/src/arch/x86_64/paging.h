@@ -6,5 +6,6 @@
 
 bool paging_translate_4k(uint64_t hhdm_offset, uint64_t virtual_address,
                          uint64_t *physical_address);
+bool paging_is_mapped(uint64_t hhdm_offset, uint64_t virtual_address);
 
 #endif

@@ -115,6 +115,17 @@ static void pci_debug_scan_bus(uint8_t bus) {
                     serial_write("KBM_E1000_MMIO_BASE=");
                     serial_write_hex(bar0_base);
                     serial_write("\n");
+
+                    uint64_t bar0_hhdm_address = hhdm_request.response->offset + bar0_base;
+                    serial_write("KBM_E1000_HHDM_ADDRESS=");
+                    serial_write_hex(bar0_hhdm_address);
+                    serial_write("\n");
+
+                    if (paging_is_mapped(hhdm_request.response->offset, bar0_hhdm_address)) {
+                        serial_write("KBM_E1000_HHDM_MAPPED\n");
+                    } else {
+                        serial_write("KBM_E1000_HHDM_NOT_MAPPED\n");
+                    }
                 } else {
                     // An I/O BAR uses only its lowest two bits as flags.
                     serial_write("KBM_E1000_IO_BASE=");
